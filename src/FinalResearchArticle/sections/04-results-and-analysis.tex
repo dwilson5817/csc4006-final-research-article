@@ -1,0 +1,123 @@
+\subsection{Counting lines of code}
+\label{subsec:counting-lines-of-code}
+
+CLOC (count lines of code) is a Perl application which counts the total lines of code across all files in a directory.
+It includes breakdowns of which programming language was used.
+
+GitSlice can be used to generate time-series data to understand how the total lines of code in an application changes over time.
+One trial example of this would be to use CLOC to show how the total lines of code in its own repository change over time.
+To collect this data, GitSlice was run on the Kelvin 2 cluster at Queen's University Belfast.
+Analysis was run across $ 5 $ nodes on the cluster with $ 5 $ threads per node.
+To run CLOC, the application was built into a Docker image and published to a GitLab container registry.
+The application was based on the Perl 5 image, and a copy of CLOC was downloaded into the container.
+
+After analysis, a Python script was used to iterate through each output file and identify the total lines of code at that commit.
+This data was saved to a CSV file.
+The results are shown in \autoref{fig:cloc}.
+
+\begin{center}
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Lines of Code in CLOC Application},
+            xlabel={Year},
+            ylabel={Total Lines of Code},
+            date coordinates in=x,
+            xticklabel={\year},
+            x tick label style={align=center},
+        ]
+        \addplot table [
+            mark=none, col sep=comma,
+            trim cells=true,
+            y=LOC
+        ] {plots/00-cloc.csv};
+        \end{axis}
+    \end{tikzpicture}
+    \label{fig:cloc}
+\end{center}
+
+The data shows how the total lines of code grew rapidly during the early development of the program when most of the code was written.
+In late 2022 there is a noticeable drop in the total lines of code, likely due to refactoring.
+This analysis may be used to developers to identify significant changes to the size of the repository.
+For example, if a developer was investigating how to reduce the size of the bundled application, it might be useful to identify the commits at which the size increased significantly which would provide a basis for further investigation as to what was added.
+
+\subsection{Unit tests}
+\label{subsec:unit-tests}
+
+Units tests are now an established practice in software engineering.
+Developers write unit tests to confirm the correct functionality of a single piece of code (for example, a single method).
+It is almost universally expected that any piece of code will have accompanying units tests to confirm it's correct operation.
+As such, it might be useful for developers to understand how the total amount of code covered by tests changes over time.
+GitSlice run on the Kelvin 2 cluster to execute the unit tests of the last $ 300 $ commits for the Flask project to find code coverage information.
+Flask is a web application framework written in Python, which is commonly used for developing websites and HTTP APIs in Python.
+Code coverage refers to the total lines in the application which are covered by at least one unit test.
+
+The results are shown in \autoref{fig:unit-tests-numpy}.
+Data was again the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
+The results show a consistently high rate of code coverage, typically above $ 93 $\%.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Code coverage (\%) in Flask},
+            xlabel={Year},
+            ylabel={Code Coverage (\%)},
+            date coordinates in=x,
+            xticklabel={\year},
+            x tick label style={align=center},
+        ]
+        \addplot table [
+            mark=none,
+            col sep=comma,
+            trim cells=true,
+            y=Coverage
+        ] {plots/01-cov-flask.csv};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Graph showing how the code coverage changes over time on the Flask project.  Analysis was performed on the last $300$ commits on the main branch.}
+    \label{fig:unit-tests-numpy}
+\end{figure}
+
+
+
+\subsection{Static code analysis}
+\label{subsec:static-code-analysis}
+
+Semgrep is a static code analysis tools which aims to find vulnerabilities in dependencies, bugs and enforce code standards.
+GitSlice can be used to run Semgrep over many version of a project.
+GitSlice was run on the Kelvin 2 cluster on the NumPy project.
+NumPy is a Python library which adds support for large multidimensional matrices and along with functions to work with them.
+It is a very commonly used library in scientific computing such as physics and mathematics research.
+
+GitSlice was used to perform static code analysis using Semgrep on NumPy.
+The commit limit was set to $ 15,000 $ and the commit skip was $ 250 $ meaning every 250th commit of the latest $ 15,000 $ on the main branch was analysed.
+The ``auto'' configuration was used.
+The results are shown in \autoref{fig:semgrep-numpy}.
+Data was again the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Total Semgrep findings on NumPy},
+            xlabel={Year},
+            ylabel={Findings},
+            date coordinates in=x,
+            xticklabel={\year},
+            x tick label style={align=center},
+        ]
+            \addplot table [
+                mark=none,
+                col sep=comma,
+                trim cells=true,
+                y=Findings
+            ] {plots/02-sast-numpy.csv};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Graph showing how the total findings from Semgrep change over time on the NumPy project.  Analysis was performed on every $250$th commit for the last $15,000$ commits on the main branch.}
+    \label{fig:semgrep-numpy}
+\end{figure}
+
+If Semgrep was run when the commits were initially pushed or merged (for example as part of a CI pipeline) then any dependency vulnerability which was not found at the time of the push would not be known.
+Using GitSlice allows for each commit to be compared against the most recent vulnerability database and it likely to find more vulnerability.
+This maybe important, especially in such a large project as NumPy which will undoubtedly have many previous versions still in use in projects which have not updated their dependencies.

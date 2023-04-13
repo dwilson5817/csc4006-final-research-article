@@ -1,0 +1,53 @@
+GitSlice been developed in Python 3.10~\cite{gitlab}.
+GitSlice performs analysis inside a Singularity container.
+Singularity is a container platform which supports Docker containers.
+Therefore, GitSlice supports any Docker container.
+The files as they existed at a specific commit are mounted on the container and a command (specified in the configuration file which will be discussed shortly) is run inside the container.
+This allows for analysis applications to be bundled as a container and used without the need for its dependencies to be available in the HPC environment.
+The output from the container is saved as a text file in the output directory.
+
+\subsection{Configuration}
+\label{subsec:configuration}
+
+When run, GitSlices accepts two arguments; the location of a configuration file and the level of logging to use (where logging output is one of the following: debug, info, warning, error and critical).
+The configuration file specifies the following settings:
+
+\begin{itemize}
+    \item \textbf{Temp Directory}: the temporary directory to use for creating a temporary copy of the repository.
+          It is recommended this location is stored locally as opposed to a network location for performance.
+          It is not necessary for files in the directory to be able to be accessed by all nodes, but all nodes must be able to create directories at this location.
+    \item \textbf{Output Directory}: the directory in which the output from each commit will be saved as a text file to.
+    \item \textbf{Output Format}: the format of the output file, for example each file can be named by the time of the commit and the commit ID with an underscore to separate them.
+          The time of the commit here refers to the commit time as opposed to author time.
+          Output files is saved as a .txt file.
+    \item \textbf{Git Repository Type}: indicates if the repository is local or remote, remote repositories will be cloned into the temporary directory and local repositories will be copied into it.
+    \item \textbf{Git Repository Source}: the source of the repository, an absolute or relative path for local repositories and a full URI for remote repositories.
+    \item \textbf{Analysis Image}: the image the analysis container will be based on.
+          This should be a Docker image, which will be pulled and a singularity container will be created from it.
+    \item \textbf{Analysis Command}: the command which will be run to start analysis.
+    \item \textbf{Repo Directory Name}: the name of the directory which will contain the repository inside the temporary directory.
+    \item \textbf{Mount Directory Name}: the name of the directory the virtual filesystem will be mounted at.
+    \item \textbf{Commit Limit}: the total amount of commits to go back before stopping - for example a value of $ 15,000 $ means not commits earlier than $ n - 15,000 $ will be analysed (where $ n $ is the total commits from the top of the branch).
+    \item \textbf{Commit Skip}: how many commits to skip between analysis, a value of $ 5 $ would mean that every 5th commit will be selected for analysis and a value of $ 1 $ means every commit will be analysed.
+\end{itemize}
+
+\subsection{MPI}
+\label{subsec:mpi}
+
+GitSlice uses MPI to allow for multiple nodes to work together to analyse the repository.
+One instance of GitSlice will be the ``primary'' instance, with $ 0 $ or more ``secondary'' instances which await a commit ID to perform analysis on.
+Upon initialisation of GitSlice, the primary instance will analyse the repository to identify the commits to be analysed.
+Each instance of GitSlice creates its own directory inside the output directory identified by a UUID generated on initialization.
+This enables any amount of instances of GitSlice to work on analysing the repository without overwriting work from another instance.
+The work is evenly divided among all instance of GitSlice---for example, if there are $ 5 $ instances with $ 25 $ commits to be analysed then each instance will analysed $ 5 $ commits.
+Multiple threads are also used to allow for each instance to analyse multiple commits simultaneously.
+For example, if $ 5 $ instances each with $ 5 $ threads then 25 commits will be analysed simultaneously.
+
+\subsection{Filesystem}
+\label{subsec:filesystem}
+
+GitSlice uses RepoFS~\cite{repofs} to bring up a virtual filesystem to access the repository.
+Each instance mounts it's own virtual filesystem as HPC clusters typically use a network filesystem to keep a consistent filesystem across nodes.
+Mounts are not shared across the network so each instance must mount it's own virtual filesystem.
+When an instance is finished it's analysis, it will bring the mount down and delete it's directory from the temporary directory.
+The output from each analysis will be stored in the output directory.

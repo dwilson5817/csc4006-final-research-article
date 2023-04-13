@@ -1,0 +1,171 @@
+%! Author = dylan
+%! Date = 24/03/2023
+
+% Preamble
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage{geometry}
+\usepackage{cite}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{charter}
+\usepackage{float}
+\usepackage{listing}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{refcount}
+\usepackage[parfill]{parskip}
+\usepackage[inline]{enumitem}
+
+\geometry{
+    a4paper,
+    margin=25mm
+}
+
+\pagestyle{fancy}
+
+\lhead{CSC4006: Research and Development Project}
+\rhead{Software Development Report}
+\lfoot{Dylan Wilson}
+\rfoot{GitSlice}
+
+\renewcommand{\footrulewidth}{0.4pt}
+
+\setlength{\headheight}{15pt}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{lststyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\linespread{1}\small,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=t,
+    abovecaptionskip=10pt,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\NewDocumentCommand{\codeword}{v}{%
+    \texttt{\textcolor{blue}{#1}}%
+}
+
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
+
+% Document
+\begin{document}
+
+    \begin{titlepage}
+        \begin{center}
+            \Large
+            CSC4006: Research and Development Project
+
+            \vfill
+            \Huge
+            Software Development Report
+
+            \medskip
+            \Large
+            GitSlice: Slicing the repository that feeds us
+
+            \vfill
+            \Large
+            by Dylan Wilson
+        \end{center}
+    \end{titlepage}
+
+    \tableofcontents
+
+    \section{Introduction}\label{sec:introduction}
+
+    This document describes usage and technical implementation details of GitSlice.   ~~HERE~~ contains the source code for GitSlice. The software has been developed in Python and runs using Python 3.10 – although it likely will run correctly on older versions of Python as it does not make use of any particularly new language features.
+
+    GitSlice is a tool for performing analysis on many different commits of a project.  In short, a commit in Git is a ``checkpoint'' containing some information about changes since the last commit.  Each commit points to zero or more ``parent commits'' and describes changes since this commit.  From this, we can build a filesystem to produce how the project looked at that specific commit.  GitSlice iterates through these commits and selects a subset of them (which is configurable) for analysis.  Some examples of use cases for this include static code analysis and code coverage across the entire commit tree.  GitSlice supports parallel and distributed execution – that is, it can run on many nodes simultaneously and on each node, multiple executions can run simultaneously (defined as a ``task'').  More information on how this works is provided in ~~HERE~~.
+
+    We will begin by introducing some important dependencies of GitSlice which are required during its execution followed by a brief discussion of how it runs on the Kelvin 2 cluster specifically (in particular how it’s SLURM scripts work).  From here we will look at how to configure GitSlice and how to run it (in particular on the Kelvin 2 cluster) and how to obtain its output.
+
+    Some explicit definition of terminology is required for clarity.  Herein, a single running version of GitSlice on a node is referred to as an instance.  That is, when GitSlice is running on 5 nodes we will say there are 5 instances of GitSlice.  An ``run'' of GitSlice by contrast refers to a single invocation across all nodes, regardless of how many nodes it is running.  For example, we might say that a run of GitSlice contains 5 instances.  The ``primary instance'' refers to the instance which is responsible for selecting commits for analysis before beginning analysis and ``secondary instances'' are only responsible for receiving commits and performing analysis on them.
+
+    A ``version'' refers to the specific set of files which existed at a particular commit.  The ``repository'' is the repository which GitSlice is performing analysis on – when referring to the repository containing the code for GitSlice itself, this is referred to as the GitSlice repository specifically.
+
+    The analysis tool is the tool which is providing useful information about the version – for example, generating code coverage reports or performing static code analysis.  The analysis command is the command which invokes the analysis tool.  The analysis image is the container which contains the analysis tool.  An ``analysis'' is a single invocation of the analysis tool on a specific version – there is always the same amount of analyses in a run of GitSlice as the amount of commits in the subset of commits selected for analysis.
+
+    \section{Design}\label{sec:design}
+
+    This section looks at each of the components of GitSlice.
+    There are a couple of important components to GitSlice which enable to perform analysis on a repository at a very large scale.
+
+    GitSlice has been written to run on the Kelvin 2 cluster, the high-performance computing cluster available to staff and students at Queen's.
+    This cluster uses the SLURM scheduler to schedule jobs, and the repository \cite{gitlab} includes SLURM scripts to begin execution of the program.
+
+    \subsection{Exposing the repository as a filesystem}\label{subsec:exposing-the-repository-as-a-filesystem}
+
+    Iterating through each commit one at a time is unnecessarily slow.
+    Given each execution of a commit does not rely on the results of another execution, it is not necessary to wait for each execution of a commit to complete and many commits can be analysed simultaneously.
+    Parallelization, however, brings its own challenges---namely that each execution requires the working directory to contain the files as they were when committed.
+    We cannot, therefore, have multiple executions running in the same directory at the same time because we can only have one commit checked out at any one time and any execution may create temporary files in the working directory.
+
+    One approach would be to make multiple copies of the repository each with a different commits checked out but this requires a large amount of copying, and checking out for each execution as well as added complexity in maintaining many copies of the repository.
+    Instead, a program called RepoFS is used to expose the repository as a virtual filesystem.
+    When run, RepoFS creates a filesystem tree with a directory called \codeword{commits-by-hash/} (among others such as \codeword{commits-by-commiter/} and \codeword{commits-by-date/}) inside this directory are directories named as the SHA1 hashes of commits which themselves contain the code of the repository as it was at that commit.
+
+    \autoref{subsec:docker-on-kelvin-an-introduction-to-singularity} will show how Docker can be used on Kelvin to easily specify a container and command to begin analysis, and the use of RepoFS allows for the files to be easily mounted onto the container.
+
+    \subsection{Docker on Kelvin: an introduction to Singularity}\label{subsec:docker-on-kelvin-an-introduction-to-singularity}
+
+    To enable GitSlice to run a wide variety of analysis tools, Docker is perhaps an obvious choice.
+    Without Docker, the appropriate modules would need to be loaded on Kelvin (for example, the JVM if running a Java program or a Python interpreter for Python).
+    Docker instead allows for all the required files and dependencies to be bundled into a container which GitSlice and pull and start without worrying about exactly what is available on Kelvin.
+    Docker is, however, not available directly on Kelvin but Singularity, a container platforms designed for HPCs is available which supports Docker containers.
+
+    \subsection{Preparing for scale: use of MPI}\label{subsec:preparing-for-scale-use-of-mpi}
+
+    Kelvin is an HPC cluster with many nodes running, to enable GitSlice to run across many nodes, MPI (message passing interfaces) are used.
+    This enables a ``primary'' instance of GitSlice to startup and decide which commits should be analyised (based on the configuration file) and then for this list of commits to be distributed over many nodes via MPI.
+    Kelvin supports OpenMPI and a Python module called \codeword{torpy} is available to simplify the use of MPI in Python.
+
+    \section{Usage}\label{sec:usage}
+
+    This section looks at how
+
+    \subsection{The configuration file}\label{subsec:the-configuration-file}
+
+
+
+    \subsection{Beginning execution}\label{subsec:beginning-execution}
+
+    Execution of GitSlice in a cluster environment should typically begin with the \codeword{job.slurm} script which is a Bash script with appropriate SLURM parameters set.
+    This script is extremely simple: it reads the contents of the \codeword{slurm/} directory and queues each \codeword{.slurm} script in alphanumeric order.
+    To define the order of the components of the system, each \codeword{.slurm} file should begin with a number to signify its order.
+    For example, the following SLURM scripts have been provided in \cite{gitlab}:
+    
+    \begin{itemize}
+        \item \codeword{00-libgit2.slurm}: \codeword{libgit2} is not available on Kelvin and must be compiled from source.  This script downloads a copy of the source code of the library and builds it from source.  The compiled files are stored in \codeword{~/.gitslice/} and if they already exist this script exits immediately - preventing continually recompiling at the beginning of each execution of GitSlice.
+        \item \codeword{01-gitslice.slurm}: this script loads the appropriate modules required for GitSlice (specifically Python3, OpenMPI, Git and Singularity) and begins its execution.
+    \end{itemize}
+
+    \subsection{Getting output}\label{subsec:getting-output}
+
+
+
+    \section{References}\label{sec:references}
+
+    \bibliographystyle{plain} % We choose the "plain" reference style
+    \bibliography{references} % Entries are in the refs.bib file
+
+\end{document}

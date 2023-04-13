@@ -300,6 +300,11 @@
 % (Unless specifically asked to do so by the journal or conference you plan
 % to submit to, of course. )
 
+% Additonal packages
+\usepackage{pgfplots}
+\usetikzlibrary{
+    pgfplots.dateplot,
+}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
@@ -357,32 +362,25 @@ Version control systems, Mining software repositories, High-performance computin
 \input{sections/01-introduction}
 
 
-\section{Literature Review}
-\label{sec:literature-review}
-\input{sections/02-literature-review}
+\section{Related Work}
+\label{sec:related-work}
+\input{sections/02-related-work}
 
-\newpage
+\section{Implementation}
+\label{sec:implementation}
+\input{sections/03-implementation}
 
-\appendix[Current work]
-To date an application written in Python has been partially developed~\cite{gitlab}.
-The application uses the GitPython package to interact with the Git repository.
-The program reads from a configuration file (written in YAML) at the location passed as an argument.
-This file contains options such as the repository to be analysed, the Docker image containing the analysis tools to be used, and the command to run to start the container.
-It will then copy a local Git repository (later, it will be able to clone a remote repository) and copy it into a working directory.
-The application gets each commit in the repository and will checkout that version in an incremental fashion.
-For each commit, the Docker image specified by the configuration file will be pulled and a container based on this image run.
-The project (as it existed at the commit to be analysed) will be mounted on the container and the command provided in the configuration file will be run to begin the analysis.
-When the container exits, it's output (both stdin and stderr) is output to the screen.
-This represents a basic, working version of what we aim to develop.
+\section{Results and Analysis}
+\label{sec:results-and-analysis}
+\input{sections/04-results-and-analysis}
 
-There are some limitations with this current version -- the most obvious of which is that every commit in the repository is checked-out and run, later the configuration file will be read to identify which set of commits should be checked-out for example, every 5th commit from the year 2019.
-Further, the output of the container is simply printed to the screen and not useful work is done to interpret this.
-As previously mentioned, the ability to clone the repository directly from a remote will also be added.
-Later versions of the application could save the output of each run to a directory to allow further analysis to be performed on the output, some additional features to interpret the output and display graphs could also be added (for example, by grepping for a particular value in the output).
-The application currently runs each commit in a sequential fashion so changes will be made to parallelize the code so that multiple versions of the repository can be checked out and run in parallel.
-The packages mentioned in the previous section will be used to achieve this.
-To use the RepoFS tool on Kelvin 2 it is necessary to build the libgit2 headers from source (we cannot install packages here) -- this will be handled by the program upon starting up on each node.
-It is possible to use run containers on Kelvin 2 using the Singularity module, further work will be done into how to extract a container as an .iso file and run this in singularity programmatically.
+\section{Conclusions}
+\label{sec:conclusions}
+\input{sections/05-conclusions}
+
+\section{Acknowledgements}
+\label{sec:acknowledgements}
+\input{sections/06-acknowledgements}
 
 % Can use something like this to put references on a page
 % by themselves when using endfloat and the captionsoff option.
