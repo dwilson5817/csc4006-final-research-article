@@ -3,7 +3,7 @@ image: texlive/texlive:latest
 build:
   script:
     - latexmk -pdf -cd -output-directory=../../out -aux-directory=../../out src/FinalResearchArticle/FinalResearchArticle.tex
-    - latexmk -pdf -cd -output-directory=../../out -aux-directory=../../out src/SoftwareDevelopmentReport/SoftwareDevelopmentReport.tex
+    - latexmk -pdf -cd -shell-escape -output-directory=../../out -aux-directory=../../out src/SoftwareDevelopmentReport/SoftwareDevelopmentReport.tex
   artifacts:
     paths:
       - 'out/*.pdf'
