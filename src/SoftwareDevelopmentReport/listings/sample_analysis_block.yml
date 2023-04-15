@@ -1,0 +1,10 @@
+Analysis:
+  56a676c8058c3bcc213aae3d0cae318aef75ed25:
+    Image: 'docker://python:3.10'
+    Command: 'python3 example.py'
+  c45a101f4ef02a20f63cb39dee04c0577ad7b099:
+    Image: 'docker://python:3.9'
+    Command: 'python3 example.py'
+  Default:
+    Image: 'docker://python:3.8'
+    Command: 'python3 example.py'
