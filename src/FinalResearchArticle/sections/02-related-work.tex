@@ -1,4 +1,13 @@
-\textbf{Mining software repositories:} The mining software repositories (MSR) field analyses software repositories to find actionable information about software projects~\cite{msrconf}.
+GitSlice exists within a field known as Mining Software Repositories (MSR).
+Existing approaches in this area were synthesised to understand how these approaches tackled iterating through Git histories.
+GitSlice is intended to be used with SCA tools so some existing SCA tools were then researched to identify tools which would potentially be used to validate the approach.
+To understand the metrics used by these tools, some time was spent exploring the metrics used by SCA tools.
+Finally, as GitSlice needs to perform analysis in parallel, some existing projects which would aid the parallel execution of GitSlice were identified.
+
+\subsection{Mining Software Repositories (MSR)}
+\label{subsec:mining-software-repositories-(msr)}
+
+The mining software repositories (MSR) field analyses software repositories to find actionable information about software projects~\cite{msrconf}.
 In MSR studies, researchers extract data from a repository to produce evidence to answer a research question~\cite{road_ahead_for_msr}.
 While software repositories are typically used as historical records of the software development process, MSR attempts to use the information contained within them to guide future decisions.
 
@@ -8,11 +17,11 @@ This enables researchers to write DSL for questions like ``How many files are ch
 The tool will then iterate through each commit in every Java project on SourceForge and GitHub to produce the answer.
 Boa, however, does not allow for the running of a specific tool on each iteration but rather simply extracting metadata from the commits of the repository.
 
-Similarly to Boa,~\cite{closer} introduces CLOSER which is a DSL for metadata across multiple types of VCS'.
+Similarly to Boa,~\cite{closer} introduces CLOSER which is a DSL for metadata across multiple types of VCSs.
 This allows for the conversion of a software repository from one type of VCS to another.
 CLOSER primarily focuses on the metadata of a repository (as opposed to each version of code stored within in it) but has provided a starting point for research into this area.
 
-Another is example is described in \cite{libvcs4j} which introduces LibVCS4j, a Java library which enables the mining of software repositories.
+Another example is described in~\cite{libvcs4j} which introduces LibVCS4j, a Java library which enables the mining of software repositories.
 LibVCS4j supports multiple types of repository and abstracts the specific VCS away at an API level to enable the mining of data from multiple types of repositories.
 Again, however, this library primarily focuses on enabling the mining of metadata from the repository as opposed to performing analysis on the code itself.
 
@@ -24,21 +33,83 @@ CVSgrab however, is built for CVS and doesn't allow the running of any tool on e
 \cite{mjgit} describes MJgit, a tool which performs code analysis on changes to code in a project by understanding how these changes affect the code.
 This allows for better textual search of the source code by ignoring cases where methods were simply moved but their functionality did not change (this would be registered in Git as line deletions then line additions, but wouldn't be included in the search results for MJgit) allowing for more accurate searching of the repository.
 
-\textbf{Source code analytics:}~\cite{sonarqube} compared the features of the three most commonly presented tools for static code analysis in research: Cppcheck, FindBugs and SonarQube.
+The information produced by MSR tools can produce datasets useful to researchers to answer further research questions.
+In~\cite{is_refactoring_always_a_good_egg} the authors attempted to understand how commits which refactor code could introduce bugs in the software.
+Code refactoring is the process of modifying code while maintaining the same behaviour in attempt to make the code more readable or maintainable.
+The authors analysed 96 Java projects in the SmartSHARK dataset to understand how often refactoring commits would induce bugs.
+They found that for over half of bug-inducing commits, some refactoring of code was involved.
+From this the authors identified the potential for more qualitative research in this area to understand the connection between the refactoring of code and the introduction of bugs.
+
+Another dataset, called World of Code~\cite{world_of_code} provides infrastructure for mining data from open-source repositories.
+At the time of publication in 2019, the dataset contained 88 million open-source projects, 1.2 billion commits and 5.5 billion source files.
+The purpose of this infrastructure was to provide a dataset for research which depends on measuring interdependencies among projects.
+One example of such a research question is given in~\cite{tracing_vulnerable_code_lineage} where the authors developed a tool to show how the duplication of code though the ``forking'' of open-source repositories can cause vulnerabilities to remain even after the vulnerability is fixed in the original source.
+They produced a tool which used the World of Code dataset to show how several known vulnerabilities in open source projects RIOT, QEMU and LZ4 had been replicated to other open-source repositories and how these vulnerabilities remained even after the original vulnerability was patched.
+
+MSR can also provide greater societal understanding outside of software development too as the information contained within repositories contains names and email addresses of developers.
+In~\cite{geographic_diversity} the authors attempted to answer the question of how the geographic diversity of software contributions has changed over time.
+They used multiple methods including analysing email address domain extensions, timezone data and the names of developers to understand how software contributions in 12 geographic regions have changed over time.
+They used a very large dataset of 50 years of data containing 2.2 billion commits from 160 million projects.
+The authors found that the name Eric, which is descended from Old Norse is more common in Ghana than it is in France or the UK which they understood to be an implication of colonialism and suggested that further research was warranted.
+
+\subsection{Code Quality Metrics}
+\label{subsec:code-quality-metrics}
+
+\cite{rosenberg1997software} attempted to identify specific metrics which impact code quality in object-oriented code.
+They identified 9 metrics which indicate the codes adherence to the 4 object-oriented principles: methods, cohesion, coupling, and inheritance.
+
+\cite{beck1999bad} popularised the term ``code smells'' which is any properties in code which suggest poor programming techniques.
+Importantly, code smells are not bugs and do not cause faults in the application but rather indicate a lack of adherence to common design principles and can indicate that the code may be hard to maintain.
+This book highlighted some common factors which may indicate larger problems with the code including large classes, methods or parameters lists and duplicated code among quite a few others.
+
+\cite{6405287} compared common code smells to expert developers subjective options on code.
+They asked the developers to assess how maintainable they perceived certain pieces of code to be and scored it using some code smell metrics.
+They noted that not all factors that affect code maintainability can be assessed and that more work was necessary to produce an accurate maintainability assessment of a system.
+
+\cite{9463095} introduces QScored, a dataset which contains code quality information in over 86,000 C\# and Java repositories.
+Using MSR, the authors produced a dataset which they believe would be useful for research on ``bug prediction, machine learning for software engineering applications and on correlating code quality with effort and productivity''.
+The authors suggested this dataset could be improved by expanding to repositories other than C\# and Java however they found an extensive tool support to detect code smells in other languages was lacking.
+
+\cite{7589790} proposed 73 different metrics to access code quality.
+The authors then trained an artificial neural network (ANN) to assess files in popular open-source repositories to estimate the quality of the code.
+This work suggests that neural networks could prove to be useful in assessing the quality of software code.
+
+\subsection{Source Code Analysis (SCA)}
+\label{subsec:source-code-analytics-(sca)}
+
+\cite{1657940} describes static code analysis in Java.
+Static code analysis is any form of analysis which assesses code without running it.
+One example of this is Lint an early linter, written in C at Bell Labs.
+A linter assesses the style of the code based on some predefined rules (for example is might check the length of lines does not exceed a certain threshold).
+
+\cite{sonarqube} compared the features of the three most commonly presented tools for static code analysis in research: Cppcheck, FindBugs and SonarQube.
 The finding was of all the features compared, SonarQube provided the greatest feature set.
 SonarQube also supports more languages than the other two where Cppcheck only supports C/C++ and FindBugs only supports Java.
-Therefore, SonarQube could be used to perform static code analysis on many types of project, and therefore a good potential candidate for a tool to validate any approach.
+Therefore, SonarQube could be used to perform static code analysis on many types of project, and is therefore a good potential candidate for a tool to validate the approach.
 
 \cite{java_ci_sca} investigates the use of static code analysis in the CI/CD pipelines of 20 open-source Java projects.
-A majority of projects used tool called CheckStyle which checks adherence to a set of rules on code style.
+A majority of projects used a tool called CheckStyle which is a commonly used Java linter.
 CheckStyle is another tool which could be used to validate the approach by understanding how rule violations vary over time.
 Further, the use of GitSlice in the CI/CD pipeline would enable developers to continually run their static code analysis tools on previous versions of the project.
 For example, running GitSlice upon push to a mainline or release branch would ensure older versions are continually checked.
 
-\cite{li_2020} analysed the benefits and limitations of Checkmarx, a common static application security testing (SAST).
-This is another good example of a tool which could be used to validate the approach by creating known vulnerable code between specific commits and testing to see if the tool is able to use Checkmarx to find the vulnerability.
+\cite{li_2020} analysed the benefits and limitations of Checkmarx, a common static application security testing (SAST) tool.
+This is another good example of the sort of tool which could be used to validate the approach by creating known vulnerable code between specific commits and testing to see if the tool is able to use Checkmarx to find the vulnerability.
 
-\textbf{Running at scale:}~\cite{torcpy} describes torcpy, a load-balancing Python library which manages the execution of multiple asynchronous tasks and supports OpenMPI which is an open-source MPI implementation that is widely used on computing clusters including Perlmutter, the 8th most powerful supercomputer according to the Nov 2022 TOP500 rankings~\cite{perlmutter}.
+Similar to Checkmarx, Semgrep~\cite{semgrep} is a static code analysis tool which supports code quality analysis on Go, Java, JavaScript, JSON, Python and Ruby code.
+Semgrep also finds vulnerabilities in dependencies.
+Semgrep is one of the static code analysis tools included as part of GitLab's SAST feature.
+This is a more modern analysis tool, and it suggests that since~\cite{9463095} in 2012 there has been significant improvement in the development of cross-language static code analysis tools.
+
+Semgrep appears to be the best choice for validating the approach among all the tools listed here for two reasons.
+Firstly, CheckMarx is a premium product and Synk Code only permits a certain amount of analyses for free per month.
+Secondly, SonarQube publishes its findings to a server, which complicates the setup required.
+By contrast Semgrep is free and open-source, and it can generate its findings as terminal output which makes it easier to extract data.
+
+\subsection{Running Repository Mining at Scale}
+\label{subsec:running-repository-mining-at-scale}
+
+\cite{torcpy} describes torcpy, a load-balancing Python library which manages the execution of multiple asynchronous tasks and supports OpenMPI which is an open-source MPI implementation that is widely used on computing clusters including Perlmutter, the 8th most powerful supercomputer according to the Nov 2022 TOP500 rankings~\cite{perlmutter}.
 This enables multiple versions of the program to run across nodes in a cluster, balancing workload to ensure optimal use of resources.
 
 Some existing work has been done in relation to accessing Git repositories in high-performance computing environments such as RepoFS~\cite{repofs}, a tool for accessing multiple versions of the repository.
@@ -46,6 +117,6 @@ RepoFS exposes the commits of the repository as a virtual filesystem, ordered in
 Use of RepoFS would allow a highly parallelised analysis to be performed on a shared filesystem against a single copy of a repository rather than making multiple copies each at a specific point.
 
 Running multiple versions of the same program can lead to issues, for example SonarQube will fail to run if another instance is already scanning the same project~\cite{sonarqube_parallel}.
-Containers, such as Docker, enable the isolation of a process from the rest of the operating system and ensures that the process will run predictably across different platforms~\cite{container_benefits}.
+Containers, such as Docker, enable the isolation of a process from the rest of the operating system and ensure that the process will run predictably across different platforms~\cite{container_benefits}.
 Running the code analysis tool inside a container also means it will be isolated (including its filesystem) from the other processes on the system allowing for multiple versions of the same tool to run simultaneously without interacting with each other.
-An analysis of Docker in high-performance environments shows that this also provides performance similar to that of running the software natively (i.e.\ directly on the operating system without any visualisation) and much greater than that of running it inside virtual machines~\cite{docker_hpc}.
+An analysis of Docker in high-performance environments shows that it provides performance similar to that of running the software natively (i.e.\ directly on the operating system without any visualisation) and much greater than that of running it inside virtual machines~\cite{docker_hpc}.

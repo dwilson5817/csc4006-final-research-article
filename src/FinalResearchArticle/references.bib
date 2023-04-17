@@ -214,3 +214,141 @@ and Ludwig, Thomas",
     year={2022},
     month={Dec}
 }
+
+@inproceedings{is_refactoring_always_a_good_egg,
+    author = {Bagheri, Amirreza and Heged\"{u}s, P\'{e}ter},
+    title = {Is Refactoring Always a Good Egg? Exploring the Interconnection between Bugs and Refactorings},
+    year = {2022},
+    isbn = {9781450393034},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3524842.3528034},
+    doi = {10.1145/3524842.3528034},
+    abstract = {Bug fixing and code refactoring are two distinct maintenance actions with different goals. While bug fixing is a corrective change that eliminates a defect from the program, refactoring targets improving the internal quality (i.e., maintainability) of a software system without changing its functionality. Best practices and common intuition suggest that these code actions should not be mixed in a single code change. Furthermore, as refactoring aims for improving quality without functional changes, we would expect that refactoring code changes will not be sources of bugs. Nonetheless, empirical studies show that none of the above hypotheses are necessarily true in practice. In this paper, we empirically investigate the interconnection between bug-related and refactoring code changes using the SmartSHARK dataset. Our goal is to explore how often bug fixes and refactorings co-occur in a single commit (tangled changes) and whether refactoring changes themselves might induce bugs into the system. We found that it is not uncommon to have tangled commits of bug fixes and refactorings; 21% of bug-fixing commits include at least one type of refactoring on average. What is even more shocking is that 54% of bug-inducing commits also contain code refactoring changes. For instance, 10% (652 occurrences) of the Change Variable Type refactorings in the dataset appear in bug-inducing commits that make up 7.9% of the total inducing commits.},
+    booktitle = {Proceedings of the 19th International Conference on Mining Software Repositories},
+    pages = {117–121},
+    numpages = {5},
+    keywords = {refactoring, empirical analysis, bug inducing commits, tangled code changes},
+    location = {Pittsburgh, Pennsylvania},
+    series = {MSR '22}
+}
+
+@INPROCEEDINGS{world_of_code,
+  author={Ma, Yuxing and Bogart, Chris and Amreen, Sadika and Zaretzki, Russell and Mockus, Audris},
+  booktitle={2019 IEEE/ACM 16th International Conference on Mining Software Repositories (MSR)},
+  title={World of Code: An Infrastructure for Mining the Universe of Open Source VCS Data},
+  year={2019},
+  volume={},
+  number={},
+  pages={143-154},
+  doi={10.1109/MSR.2019.00031}
+}
+
+@INPROCEEDINGS{tracing_vulnerable_code_lineage,
+  author={Reid, David and Eng, Kalvin and Bogart, Chris and Tutko, Adam},
+  booktitle={2021 IEEE/ACM 18th International Conference on Mining Software Repositories (MSR)},
+  title={Tracing Vulnerable Code Lineage},
+  year={2021},
+  volume={},
+  number={},
+  pages={621-623},
+  doi={10.1109/MSR52588.2021.00087}
+}
+
+
+@inproceedings{geographic_diversity,
+    author = {Rossi, Davide and Zacchiroli, Stefano},
+    title = {Geographic Diversity in Public Code Contributions: An Exploratory Large-Scale Study over 50 Years},
+    year = {2022},
+    isbn = {9781450393034},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3524842.3528471},
+    doi = {10.1145/3524842.3528471},
+    abstract = {We conduct an exploratory, large-scale, longitudinal study of 50 years of commits to publicly available version control system repositories, in order to characterize the geographic diversity of contributors to public code and its evolution over time. We analyze in total 2.2 billion commits collected by Software Heritage from 160 million projects and authored by 43 million authors during the 1971--2021 time period. We geolocate developers to 12 world regions derived from the United Nation geoscheme, using as signals email top-level domains, author names compared with names distributions around the world, and UTC offsets mined from commit metadata.We find evidence of the early dominance of North America in open source software, later joined by Europe. After that period, the geographic diversity in public code has been constantly increasing. We also identify relevant historical shifts related to the UNIX wars, the increase of coding literacy in Central and South Asia, and broader phenomena like colonialism and people movement across countries (immigration/emigration).},
+    booktitle = {Proceedings of the 19th International Conference on Mining Software Repositories},
+    pages = {80–85},
+    numpages = {6},
+    keywords = {version control systems, commit, diversity, software heritage, social coding, open source, geography},
+    location = {Pittsburgh, Pennsylvania},
+    series = {MSR '22}
+}
+
+@misc{semgrep,
+    title="{Semgrep---Find bugs and enforce code standards}",
+    url={https://semgrep.dev/},
+    author="{Semgrep}",
+    year={2022},
+    month={Jun}
+}
+
+@article{beck1999bad,
+  title={Bad smells in code},
+  author={Beck, Kent and Fowler, Martin and Beck, Grandma},
+  journal={Refactoring: Improving the design of existing code},
+  volume={1},
+  number={1999},
+  pages={75--88},
+  year={1999}
+}
+
+@article{rosenberg1997software,
+  title={Software quality metrics for object-oriented environments},
+  author={Rosenberg, Linda H and Hyatt, Lawrence E},
+  journal={Crosstalk journal},
+  volume={10},
+  number={4},
+  pages={1--6},
+  year={1997}
+}
+@INPROCEEDINGS{6405287,
+  author={Yamashita, Aiko and Moonen, Leon},
+  booktitle={2012 28th IEEE International Conference on Software Maintenance (ICSM)},
+  title={Do code smells reflect important maintainability aspects?},
+  year={2012},
+  volume={},
+  number={},
+  pages={306-315},
+  doi={10.1109/ICSM.2012.6405287}
+}
+
+@INPROCEEDINGS{9463095,
+  author={Sharma, Tushar and Kessentini, Marouane},
+  booktitle={2021 IEEE/ACM 18th International Conference on Mining Software Repositories (MSR)},
+  title={QScored: A Large Dataset of Code Smells and Quality Metrics},
+  year={2021},
+  volume={},
+  number={},
+  pages={590-594},
+  doi={10.1109/MSR52588.2021.00080}
+}
+
+@INPROCEEDINGS{7589790,
+  author={Papamichail, Michail and Diamantopoulos, Themistoklis and Symeonidis, Andreas},
+  booktitle={2016 IEEE International Conference on Software Quality, Reliability and Security (QRS)},
+  title={User-Perceived Source Code Quality Estimation Based on Static Analysis Metrics},
+  year={2016},
+  volume={},
+  number={},
+  pages={100-107},
+  doi={10.1109/QRS.2016.22}
+}
+
+@ARTICLE{1657940,
+  author={Louridas, P.},
+  journal={IEEE Software},
+  title={Static code analysis},
+  year={2006},
+  volume={23},
+  number={4},
+  pages={58-61},
+  doi={10.1109/MS.2006.114}
+}
+
+@misc{singularity,
+    title="{Introduction to Singularity — Singularity container 3.5 documentation}",
+    url={https://docs.sylabs.io/guides/3.5/user-guide/introduction.html},
+    author="{Sylabs}",
+    year={2022},
+    month={Jun}
+}

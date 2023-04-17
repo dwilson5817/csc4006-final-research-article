@@ -309,6 +309,13 @@
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
+\NewDocumentCommand{\codeword}{v}{%
+    \texttt{\textcolor{blue}{#1}}%
+}
+
+\makeatletter % https://tex.stackexchange.com/a/205193/156344
+\newcommand*\short[1]{\expandafter\@gobbletwo\number\numexpr#1\relax}
+\makeatother
 
 \begin{document}
 
@@ -361,7 +368,6 @@ Version control systems, Mining software repositories, High-performance computin
 \label{sec:introduction}
 \input{sections/01-introduction}
 
-
 \section{Related Work}
 \label{sec:related-work}
 \input{sections/02-related-work}
@@ -370,25 +376,19 @@ Version control systems, Mining software repositories, High-performance computin
 \label{sec:implementation}
 \input{sections/03-implementation}
 
-\section{Results and Analysis}
+\section{Example Application and Evaluation of Approach}
 \label{sec:results-and-analysis}
 \input{sections/04-results-and-analysis}
 
-\section{Conclusions}
+\section{Discussion and Conclusion}
 \label{sec:conclusions}
 \input{sections/05-conclusions}
-
-\section{Acknowledgements}
-\label{sec:acknowledgements}
-\input{sections/06-acknowledgements}
 
 % Can use something like this to put references on a page
 % by themselves when using endfloat and the captionsoff option.
 \ifCLASSOPTIONcaptionsoff
   \newpage
 \fi
-
-
 
 % trigger a \newpage just before the given reference
 % number - used to balance the columns on the last page

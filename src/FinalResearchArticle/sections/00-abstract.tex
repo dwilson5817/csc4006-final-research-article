@@ -3,6 +3,9 @@ Git repositories contain metadata relating to the development of the project and
 Analysis of this metadata to gain insight into the software development process is performed in the field of mining software repositories (MSR).
 Static code analysis (SCA) tools perform analysis on source code to detect issues during development (they are static because they analyse the code without running it) such as untested or vulnerable code.
 SCA only analyses one version of the code, however.
-The ability to run code analysis tools across many versions of a project could therefore provide developers with useful information of how their code changes over time.
-To achieve this, a tool, GitSlice will be built to iterate through a given set of Git commits to run a code analysis tool on each version of the software and provide the developer with information about how metrics of their code change over time.
-Iterating through commits in a linear fashion is slow, so to reduce the time taken to iterate through the commits we will parallelize this process.
+The ability to run code analysis tools across many historic versions of a project could therefore provide useful insight into how the code has changed over time.
+
+A generic approach was implemented to perform iterative execution of SCA tools on historic versions of codebases from Git repositories.
+The approach allows for configurable patterns to select commits for analysis.
+It is necessary to run the SCA tool in parallel to reduce the time needed to perform analysis, particularly when very large amounts of commits are being analysed.
+To demonstrate the utility and flexibility of the approach, a selection of SCA tools were run against popular open source projects to produce time series data showing how the output of these SCA tools changes throughout the evolution of the project.

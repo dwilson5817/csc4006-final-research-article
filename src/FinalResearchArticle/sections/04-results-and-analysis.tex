@@ -1,24 +1,43 @@
-\subsection{Counting lines of code}
+To test the approach outlined in \autoref{sec:implementation}, several third-party SCA tools were selected to perform analysis on several open source projects written multiple languages.
+To begin we will use CLOC, a simple Perl script to calculate the total lines of code in a few different popular projects written in Perl, Python and C\@.
+We will then use the implementation to perform unit tests in Python and calculate code coverage over time.
+Finally, we will look at Semgrep, an SCA tool for detecting bugs and vulnerabilities.
+
+\subsection{Count Lines of Code (CLOC)}
 \label{subsec:counting-lines-of-code}
 
-CLOC (count lines of code) is a Perl application which counts the total lines of code across all files in a directory.
-It includes breakdowns of which programming language was used.
+Perhaps the most basic SCA task is to count the lines of code in an application.
+Counting lines of code provides a good starting point for assessing the approach.
+CLOC (short for count lines of code) is a Perl script which counts the total lines of code across all files in a directory.
+It includes breakdowns of programming languages used in a repository.
 
-GitSlice can be used to generate time-series data to understand how the total lines of code in an application changes over time.
-One trial example of this would be to use CLOC to show how the total lines of code in its own repository change over time.
-To collect this data, GitSlice was run on the Kelvin 2 cluster at Queen's University Belfast.
+GitSlice was run using CLOC as the analysis tool against multiple projects written in different languages, specifically CLOC itself, NumPy and Redis.
+The output from GitSlice was used to generate time-series data to understand how the total lines of code in an application changes over time.
+
+To start, CLOC was run on its own repository to see how the total lines of code have changed over time in the CLOC script itself.
+To collect this data, GitSlice was run on the Kelvin 2 HPC cluster at Queen's University Belfast.
 Analysis was run across $ 5 $ nodes on the cluster with $ 5 $ threads per node.
-To run CLOC, the application was built into a Docker image and published to a GitLab container registry.
-The application was based on the Perl 5 image, and a copy of CLOC was downloaded into the container.
 
-After analysis, a Python script was used to iterate through each output file and identify the total lines of code at that commit.
+A \codeword{Dockerfile} was written, based on the Perl 5 image from Docker Hub which downloaded the script and saved it as a system command in \codeword{/usr/local/bin}.
+This image was built using a GitLab CI/CD pipeline and published to a GitLab container registry.
+This image was then pulled by GitSlice and run across all commits in the CLOC repository.
+The main branch in the CLOC repository is \codeword{master} so GitSlice was configured to start at the tip of this branch, working backwards through all commits in the repository.
+
+A small Python script was then written to read from the output directory produced by GitSlice, iterating through each of the output files and extracting the total lines of code reported by the CLOC script.
+This script works by prompting the user to provide the output directory produced by GitSlice.
+It then prompts for some text which should be searched for to find the line containing the value of interest (for example, in this case the text \codeword{SUM:} was used as this line in CLOCs output contains the total lines of code for the application).
+Finally, it prompts for the position of the data to extract from the line which matches the search text and searches all text files in the output directory.
 This data was saved to a CSV file.
-The results are shown in \autoref{fig:cloc}.
 
-\begin{center}
+The results are shown in \autoref{fig:cloc_cloc}.
+The output from GitSlice shows how the size of the repository has changed significantly over time, growing 5-fold between the start of the project and today.
+It also shows how the total lines of code grew significantly in the first year and a half of development and then much more slowly.
+
+\begin{figure}
+    \centering
     \begin{tikzpicture}
         \begin{axis}[
-            title={Lines of Code in CLOC Application},
+            title={Lines of Code in CLOC},
             xlabel={Year},
             ylabel={Total Lines of Code},
             date coordinates in=x,
@@ -29,31 +48,120 @@ The results are shown in \autoref{fig:cloc}.
             mark=none, col sep=comma,
             trim cells=true,
             y=LOC
-        ] {plots/00-cloc.csv};
+        ] {plots/00-cloc-cloc.csv};
         \end{axis}
     \end{tikzpicture}
-    \label{fig:cloc}
-\end{center}
+    \caption{Graph showing how the total lines of code in CLOC has changed over time.}
+    \label{fig:cloc_cloc}
+\end{figure}
 
-The data shows how the total lines of code grew rapidly during the early development of the program when most of the code was written.
-In late 2022 there is a noticeable drop in the total lines of code, likely due to refactoring.
-This analysis may be used to developers to identify significant changes to the size of the repository.
-For example, if a developer was investigating how to reduce the size of the bundled application, it might be useful to identify the commits at which the size increased significantly which would provide a basis for further investigation as to what was added.
+CLOC is not a particularly active project, currently the repository has only 998 commits and as result all commits were selected for analysis.
+It is not always the case that analysis should be run on every commit as it takes time to perform analysis and it may be the case that only the most recent commits are of interest.
+NumPy is a much larger project, currently the NumPy repository contains over 32 thousand commits.
+NumPy is a Python library which adds support for large multidimensional matrices along with functions to work with them.
+It is a very commonly used library in scientific computing such as in physics and mathematics research.
 
-\subsection{Unit tests}
+GitSlice allows for the most recent $ x $ commits to be selected.
+CLOC was again used to count the line of the code, this time in the NumPy repository but selecting only the $ 5000 $ most recent commits.
+GitSlice was run in the same way as before, on the Kelvin 2 HPC cluster across 5 nodes each running 5 tasks.
+The same Docker image was used to run CLOC and the same Python script was used to extract data from the GitSlice output.
+NumPy uses \codeword{main} instead of \codeword{master} as it's primary branch so GitSlice was configured to use this branch.
+CLOC provides more information than just the total lines of code, it also provides a breakdown of how many lines of code have been written in different programming languages.
+As GitSlice stores the output directly from the analysis command, all information from the analysis tool is maintained.
+In this analysis, the total lines of Python code only were extracted from the output.
+
+The results of this analysis are shown in \autoref{fig:cloc_numpy}.
+The output from GitSlice again shows a gradual trend upwards in the total lines of code.
+There are some quite significant drops in total lines of code, this is likely caused by refactoring operations.
+For example, the most recent drop in commits was caused by the removal of old documentation relating to now non-existent classes and the following commits then added new documentation.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Lines of Code in Numpy},
+            xlabel={Year},
+            ylabel={Total Lines of Code},
+            date coordinates in=x,
+            xticklabel={\month/\year},
+            x tick label style={align=center},
+        ]
+        \addplot table [
+            mark=none, col sep=comma,
+            trim cells=true,
+            y=LOC
+        ] {plots/01-cloc-numpy.csv};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Graph showing how the total lines of code in NumPy has changed over time using the main branch as the starting point.  Only the last 5,000 commits were selected for analysis.}
+    \label{fig:cloc_numpy}
+\end{figure}
+
+Of course, for tasks like counting lines of code it is not necessary to perform analysis on every commit in the repository, as there are likely to be only small differences between commits.
+Often, a certain amount of time between commits may be desired.
+Redis is a long-running project, first released in 2009 there is over decade of commits in its repository.
+Redis is an in-memory key-value store commonly used for caching and session management among other uses.
+GitSlice supports selecting only commits which occur after a certain amount of time has passed since the previous commit.
+To understand how the total lines of code in Redis has changed since its first release, GitSlice was configured to select one commit every 30 days from the Redis repository.
+Aside from limiting commits to one per 30 days, the configuration for GitSlice was otherwise identical to the analysis performed on CLOC and NumPy (i.e.\ it used the same image, same environment with the same amount of resources allocated).
+Redis is written in C and so the same Python script as before was used to extract the total lines of C code and the total lines of C/C++ headers.
+
+The results of this analysis are shown in \autoref{fig:cloc_redis}.
+As analysis was only performed on one commit each month, a much smoother graph is produced with less sudden variations.
+The trend from the previous analyses is shown here too, as the repository ages there is a steady increase in the total lines of code.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Lines of Code in Redis},
+            xlabel={Year},
+            ylabel={Total Lines of Code},
+            date coordinates in=x,
+            xticklabel={\year},
+            x tick label style={align=center},
+            legend pos=north west
+        ]
+        \addplot table [
+            mark=none, col sep=comma,
+            trim cells=true,
+            y=LOC
+        ] {plots/02-cloc-redis-c.csv};
+        \addplot table [
+            mark=none, col sep=comma,
+            trim cells=true,
+            y=LOC
+        ] {plots/03-cloc-redis-headers.csv};
+        \addlegendentry{C Files}
+        \addlegendentry{C/C++ Header Files}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Graph showing how the total lines of code in Redis has changed over time using the unstable branch as the starting point.  One commit every 30 days was selected for analysis.}
+    \label{fig:cloc_redis}
+\end{figure}
+
+\subsection{Unit Test Coverage}
 \label{subsec:unit-tests}
 
-Units tests are now an established practice in software engineering.
-Developers write unit tests to confirm the correct functionality of a single piece of code (for example, a single method).
-It is almost universally expected that any piece of code will have accompanying units tests to confirm it's correct operation.
-As such, it might be useful for developers to understand how the total amount of code covered by tests changes over time.
-GitSlice run on the Kelvin 2 cluster to execute the unit tests of the last $ 300 $ commits for the Flask project to find code coverage information.
+Unit tests are written to confirm the correct functionality of a single piece of code (for example, a single method).
+Unit test coverage tools perform SCA to identify lines which are not covered by any tests.
+It can be useful to understand how the total amount of code covered by tests in a project changes over time.
+GitSlice was again run on the Kelvin 2 HPC cluster to execute the unit tests of the last $ 300 $ commits for the Flask project and find code coverage using Python \codeword{coverage} package.
 Flask is a web application framework written in Python, which is commonly used for developing websites and HTTP APIs in Python.
-Code coverage refers to the total lines in the application which are covered by at least one unit test.
+
+Another \codeword{Dockerfile} was written, based on the Python image from Docker Hub which installed \codeword{rsync} via \codeword{apt-get} which is used by GitSlice for copying the project files to a temporary folder as before running the tests dependencies must be installed and the mounted copy of the project is read-only.
+This image was again built using a GitLab CI/CD pipeline and published to a GitLab container registry and pulled by GitSlice.
+In the CLOC application the script only needed to be invoked in the directory containing the files, but it is rarely this simple to run a SCA tool as dependencies are often required.
+GitSlice was configured to install the dependencies of Flask from PyPi before running the tests to generate code coverage reports.
+The main branch in the Flask repository is \codeword{main} and GitSlice was configured to start at this branch.
 
 The results are shown in \autoref{fig:unit-tests-numpy}.
-Data was again the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
+Data was again collecting using the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
 The results show a consistently high rate of code coverage, typically above $ 93 $\%.
+There is an interesting anomaly around June 2022 caused by commit \codeword{82c2e03} which produced just $ 2\% $ coverage due to a refactor which caused most module imports to fail.
+This issue is then fixed in the following commit, \codeword{e0dad45}.
+No CI pipeline was performed on \codeword{82c2e03} which suggests it was pushed at the same time as \codeword{e0dad45} which a CI pipeline was run on.
+Using GitSlice we are able to identify a bug-inducing commit, given CI never ran for this commit GitSlice has identified a failure which potentially has never been discovered before.
 
 \begin{figure}
     \centering
@@ -63,7 +171,7 @@ The results show a consistently high rate of code coverage, typically above $ 93
             xlabel={Year},
             ylabel={Code Coverage (\%)},
             date coordinates in=x,
-            xticklabel={\year},
+            xticklabel={\month/\short{\year}},
             x tick label style={align=center},
         ]
         \addplot table [
@@ -71,29 +179,32 @@ The results show a consistently high rate of code coverage, typically above $ 93
             col sep=comma,
             trim cells=true,
             y=Coverage
-        ] {plots/01-cov-flask.csv};
+        ] {plots/04-cov-flask.csv};
         \end{axis}
     \end{tikzpicture}
     \caption{Graph showing how the code coverage changes over time on the Flask project.  Analysis was performed on the last $300$ commits on the main branch.}
     \label{fig:unit-tests-numpy}
 \end{figure}
 
-
-
 \subsection{Static code analysis}
 \label{subsec:static-code-analysis}
 
-Semgrep is a static code analysis tools which aims to find vulnerabilities in dependencies, bugs and enforce code standards.
-GitSlice can be used to run Semgrep over many version of a project.
-GitSlice was run on the Kelvin 2 cluster on the NumPy project.
-NumPy is a Python library which adds support for large multidimensional matrices and along with functions to work with them.
-It is a very commonly used library in scientific computing such as physics and mathematics research.
+One of the most common tasks for SCA tools is identifying vulnerabilities.
+Semgrep is a static code analysis tool which aims to find vulnerabilities in dependencies, bugs and enforce code standards.
+GitSlice can be used to run Semgrep over many versions of a project where Semgrep will usually only perform analysis on one version of the project.
+This allows analysis using today's known vulnerabilities against older versions of the project.
 
-GitSlice was used to perform static code analysis using Semgrep on NumPy.
-The commit limit was set to $ 15,000 $ and the commit skip was $ 250 $ meaning every 250th commit of the latest $ 15,000 $ on the main branch was analysed.
-The ``auto'' configuration was used.
+As before, GitSlice was run on the Kelvin 2 HPC cluster using 5 nodes each with 5 tasks.
+GitSlice was used to perform static code analysis using Semgrep on NumPy which is written in Python.
+Often it is not important to perform analysis on every commit, but only every X commit should be analysed.
+The commit skip was $ 249 $ meaning every 250th commit on the main branch was analysed.
+The ``auto'' configuration was used for Semgrep, this avoids needing to provide a configuration file.
+
 The results are shown in \autoref{fig:semgrep-numpy}.
-Data was again the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
+As before, data was collected using the data collection script outlined in \autoref{subsec:counting-lines-of-code}.
+If Semgrep was run when the commits were initially pushed or merged (for example as part of a CI pipeline) then any dependency vulnerability which was not found at the time of the push would not be known.
+Using GitSlice allows for each commit to be compared against the most recent vulnerability database and it likely to find more vulnerabilities.
+This may be important, especially in such a large project as NumPy which will undoubtedly have many previous versions still in use in projects which have not updated their dependencies.
 
 \begin{figure}
     \centering
@@ -103,7 +214,7 @@ Data was again the data collection script outlined in \autoref{subsec:counting-l
             xlabel={Year},
             ylabel={Findings},
             date coordinates in=x,
-            xticklabel={\year},
+            xticklabel={\month/\short{\year}},
             x tick label style={align=center},
         ]
             \addplot table [
@@ -111,13 +222,43 @@ Data was again the data collection script outlined in \autoref{subsec:counting-l
                 col sep=comma,
                 trim cells=true,
                 y=Findings
-            ] {plots/02-sast-numpy.csv};
+            ] {plots/05-semgrep-numpy.csv};
         \end{axis}
     \end{tikzpicture}
     \caption{Graph showing how the total findings from Semgrep change over time on the NumPy project.  Analysis was performed on every $250$th commit for the last $15,000$ commits on the main branch.}
     \label{fig:semgrep-numpy}
 \end{figure}
 
-If Semgrep was run when the commits were initially pushed or merged (for example as part of a CI pipeline) then any dependency vulnerability which was not found at the time of the push would not be known.
-Using GitSlice allows for each commit to be compared against the most recent vulnerability database and it likely to find more vulnerability.
-This maybe important, especially in such a large project as NumPy which will undoubtedly have many previous versions still in use in projects which have not updated their dependencies.
+Semgrep supports a wide variety of languages, not just Python.
+GitSlice was run again with the same configuration used for NumPy but this time it was used to perform Semgrep analysis on Jenkins.
+Jenkins is an open-source automation server written in Java commonly used to run CI/CD pipelines.
+GitSlice supports excluding commits which don't change a particular file type, this analysis was run using only commits which modify \codeword{.java} files.
+All other configuration was left exactly the same.
+
+The output from this run is shown in \autoref{fig:semgrep_jenkins}.
+This analysis shows a decline in the total findings produced by Semgrep.
+Earlier commits appear to have higher findings because of more vulnerabilities discovered in them.
+This suggests that GitSlice was able to identify vulnerabilities which would not have been identified when these commits were initially created.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            title={Total Semgrep findings on Jenkins},
+            xlabel={Year},
+            ylabel={Findings},
+            date coordinates in=x,
+            xticklabel={\month/\short{\year}},
+            x tick label style={align=center},
+        ]
+            \addplot table [
+                mark=none,
+                col sep=comma,
+                trim cells=true,
+                y=findings
+            ] {plots/06-semgrep-jenkins.csv};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Graph showing how the total findings from Semgrep change over time on the Jenkins project.  Analysis was performed on every $10$th commit up to $200$ commits on the main branch.}
+    \label{fig:semgrep_jenkins}
+\end{figure}

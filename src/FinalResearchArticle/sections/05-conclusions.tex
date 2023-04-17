@@ -1,0 +1,37 @@
+Typically, SCA tools only perform analysis on the version of a project provided to them.
+There are scenarios where it may be advantageous to perform analysis again as new information may be available (such as is the case for tools to identify vulnerabilities which have databases which are continually updated).
+This is important as older versions of the project may still be in use and as such it would be important to identify vulnerabilities in dependencies for these versions.
+Further, it can be useful to generate time-series data to show how metrics of a project have changed over time such a unit test coverage or lines of code.
+
+A generic iterative approach was developed, called GitSlice to enable the execution of any arbitrary SCA tools on historic versions of a software repository.
+Results show that this approach was able to perform analysis using multiple third-party SCA tools to perform a variety of common SCA tasks including counting the lines of code, generating unit test coverage and identifying vulnerabilities and bugs.
+The projects on which analysis has been performed have been written in multiple languages including Java, Perl, Python and C\@.
+The results suggest GitSlice is generic enough to perform analysis using any arbitrary analysis tool and also generic enough to perform analysis independent of project programming language.
+
+GitSlice was configured to initially run a simple script already available in the container but was later configured to install dependencies before running some tests.
+This suggests GitSlice is flexible enough to perform analysis which requires some setup tasks such as installing dependencies.
+Further, several of GitSlice's commit filtering options were demonstrated including limiting to a certain amount of commits, skipping every $ x $ commits, only selecting commits with more than a certain period of time between them and only selecting commits which modify particular types of files.
+Results show these options work well and are able to modify the output produced by GitSlice and significantly speed up execution by avoiding performing analysis on all commits.
+
+Some interesting information was found such as the fact that the projects analysed tend to continually increase in total lines of code as they age and none of the projects tests showed any trend downwards.
+GitSlice was able to identify a commit in Flask for which CI was never run and which causes import errors leading to $ 2\% $ code coverage.
+Finally, GitSlice was able to show a decrease of findings produced by Semgrep in the Jenkins project, this trend appears to be caused by the fact there is an increase in vulnerabilities for older versions which suggested that GitSlice was able to identify vulnerabilities which were not know originally when the commit was pushed.
+Overall GitSlice appears to perform well, and is generic enough to perform many common SCA tasks.
+
+\subsection{Future Work}
+\label{subsec:future-work}
+
+One major weakness is that while containerisation has seen significant adoption in software engineering, not all analysis tools will be easily containerised, and it may be easier to run them natively.
+This may be the case if a significant amount of dependencies is required and building an image would require very specific dependencies and files to exist in the image.
+As a result, GitSlice could be further improved by supporting a native execution option which skips the analysis container and runs the analysis command directly on the host.
+
+Further, \codeword{rsync} is required in an analysis container in order to copy files to a temporary directory where they can be modified.
+While this option can be disabled, almost all tools require at least a few files to be created or modified in order to run and \textbf{Rsync To Temp} option (see \autoref{subsec:configuration}) will be required in most situations.
+In practice, if it is not possible for \codeword{rsync} to be installed, it is possible for the analysis command to copy the files but this could be supported by GitSlice perhaps by instead using Python's \codeword{shutil.copy()} on the host to create the files in a temporary folder before the analysis container is started.
+This would remove the requirement of \codeword{rsync} in the analysis container (which is often not installed to reduce the image size) and mean images could almost always be used directly from popular container repositories such as Docker Hub.
+
+Finally, caching of files used by analysis tools could be improved.
+When GitSlice is run, the container is almost completely isolated from the outside which means that files such as build dependencies must be downloaded as part of each analysis.
+For large analyses this could cause problems with rate limits where many containers are continually downloading the same files over and over again.
+This could be fixed by providing a custom bind mounts option which allows for the configuration file to specify a list of bind mounts for that analysis image.
+For example, Maven, a popular Java build automation tool uses a directory \codeword{~/.m2} to cache dependencies it has downloaded, this could be mounted on the container to significantly reduce downloads and speed up execution.
